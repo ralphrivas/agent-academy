@@ -38,6 +38,19 @@ public class EmailService : IEmailService
     /// </summary>
     public async Task SendNotificationEmailAsync(List<TransformedPost> transformedPosts, string sharePointUrl)
     {
+        await RetryHelper.ExecuteWithRetryAsync(
+            async () => await SendNotificationEmailInternalAsync(transformedPosts, sharePointUrl),
+            maxRetries: 3,
+            _logger,
+            nameof(SendNotificationEmailAsync)
+        );
+    }
+
+    /// <summary>
+    /// Internal method to send notification email
+    /// </summary>
+    private async Task<bool> SendNotificationEmailInternalAsync(List<TransformedPost> transformedPosts, string sharePointUrl)
+    {
         try
         {
             _logger.LogInformation("Sending email notification to {Recipient}", _settings.EmailRecipient);
@@ -97,6 +110,8 @@ public class EmailService : IEmailService
             await _graphClient.Users[_settings.EmailRecipient].SendMail.PostAsync(requestBody);
 
             _logger.LogInformation("Email notification sent successfully to {Recipient}", _settings.EmailRecipient);
+            
+            return true; // Return value for retry helper
         }
         catch (Exception ex)
         {

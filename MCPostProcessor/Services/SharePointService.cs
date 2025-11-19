@@ -36,6 +36,19 @@ public class SharePointService : ISharePointService
     /// </summary>
     public async Task<string> UploadJsonToSharePointAsync(List<TransformedPost> transformedPosts, string fileName)
     {
+        return await RetryHelper.ExecuteWithRetryAsync(
+            async () => await UploadJsonToSharePointInternalAsync(transformedPosts, fileName),
+            maxRetries: 3,
+            _logger,
+            nameof(UploadJsonToSharePointAsync)
+        );
+    }
+
+    /// <summary>
+    /// Internal method to upload JSON to SharePoint
+    /// </summary>
+    private async Task<string> UploadJsonToSharePointInternalAsync(List<TransformedPost> transformedPosts, string fileName)
+    {
         try
         {
             _logger.LogInformation("Uploading {Count} posts to SharePoint as {FileName}", 

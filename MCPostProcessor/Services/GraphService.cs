@@ -37,6 +37,19 @@ public class GraphService : IGraphService
     /// </summary>
     public async Task<List<MessageCenterPost>> GetMessageCenterPostsAsync(int daysToLookBack)
     {
+        return await RetryHelper.ExecuteWithRetryAsync(
+            async () => await FetchMessageCenterPostsInternalAsync(daysToLookBack),
+            maxRetries: 3,
+            _logger,
+            nameof(GetMessageCenterPostsAsync)
+        );
+    }
+
+    /// <summary>
+    /// Internal method to fetch Message Center posts
+    /// </summary>
+    private async Task<List<MessageCenterPost>> FetchMessageCenterPostsInternalAsync(int daysToLookBack)
+    {
         try
         {
             var lookBackDate = DateTime.UtcNow.AddDays(-daysToLookBack);
